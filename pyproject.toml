@@ -1,0 +1,19 @@
+name = "peachTree-invoice-docReader"
+version = "0.1.1"
+description = "invoice document data extractor for peachtree software"
+readme = "README.md"
+requires-python = ">=3.13.7"
+dependencies = []
+
+[tool.bumpversion]
+current_version = "0.1.0" 
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+commit = true
+tag = true
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+# This tells the tool to specifically look inside the [project] section
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""
