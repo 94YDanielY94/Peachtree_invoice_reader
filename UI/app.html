@@ -1,0 +1,1895 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PeachTree Invoice Reader</title>
+    <style>
+      @font-face {
+        font-family: "googleFlex";
+        src: url("./font/Google_Sans_Flex/GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf");
+      }
+
+      :root {
+        --white: #ffffff;
+        --bg: #f8fafc;
+        --bg-2: #f1f5f9;
+        --bg-3: #e2e8f0;
+        --border: #e2e8f0;
+        --border-hi: #cbd5e1;
+        --blue: #2563eb;
+        --blue-light: #eff6ff;
+        --blue-dim: #bfdbfe;
+        --green: #16a34a;
+        --green-light: #f0fdf4;
+        --red: #dc2626;
+        --red-light: #fef2f2;
+        --amber: #d97706;
+        --amber-light: #fffbeb;
+        --soft-black: #2c2c2c;
+        --text: #0f172a;
+        --text-dim: #64748b;
+        --text-muted: #94a3b8;
+        --sans: "googleFlex", "Inter", system-ui, sans-serif;
+        --radius: 6px;
+        --radius-lg: 12px;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+        --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.12);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        font-family: var(--sans);
+        font-size: 13px;
+        background: var(--bg);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+      }
+      button,
+      input,
+      select {
+        font-family: var(--sans);
+      }
+      ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border-hi);
+        border-radius: 4px;
+      }
+
+      /* ─── HEADER ─────────────────────────── */
+      header {
+        height: 52px;
+        background: var(--white);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 14px;
+        flex-shrink: 0;
+        z-index: 10;
+      }
+      .logo {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .logo span {
+        color: var(--blue);
+      }
+
+      .coa-pill {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 12px;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        font-size: 11px;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .coa-pill:hover {
+        border-color: var(--blue-dim);
+        color: var(--blue);
+        background: var(--blue-light);
+      }
+      .coa-pill.loaded {
+        color: var(--green);
+        border-color: rgba(22, 163, 74, 0.25);
+        background: var(--green-light);
+      }
+      .coa-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--text-muted);
+        flex-shrink: 0;
+      }
+      .coa-dot.loaded {
+        background: var(--green);
+      }
+
+      .sep {
+        flex: 1;
+      }
+
+      /* ─── BUTTONS ─────────────────────────── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: var(--radius);
+        border: 1px solid transparent;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: var(--blue);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: #1d4ed8;
+      }
+      .btn-outline {
+        background: var(--white);
+        color: var(--text);
+        border-color: var(--border-hi);
+      }
+      .btn-outline:hover {
+        background: var(--bg-2);
+        border-color: var(--blue-dim);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text-dim);
+        border-color: transparent;
+      }
+      .btn-ghost:hover {
+        background: var(--bg-2);
+        color: var(--text);
+      }
+      .btn-danger {
+        background: var(--white);
+        color: var(--red);
+        border-color: #fecaca;
+      }
+      .btn-danger:hover {
+        background: var(--red-light);
+      }
+      .btn-sm {
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+
+      /* ─── MAIN SPLIT ─────────────────────── */
+      main {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      /* ─── LEFT: VIEWER ───────────────────── */
+      .viewer {
+        width: 42%;
+        min-width: 280px;
+        display: flex;
+        flex-direction: column;
+        background: var(--white);
+        border-right: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .viewer-bar {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .viewer-bar-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        flex: 1;
+      }
+
+      .cam-wrap {
+        flex: 1;
+        position: relative;
+        background: #e8edf5;
+        overflow: hidden;
+        cursor: crosshair;
+        min-height: 0;
+      }
+      #camFeed {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+      #selCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        cursor: crosshair;
+      }
+      .cam-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: var(--text-muted);
+      }
+      .scan-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.88);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        color: var(--blue);
+        font-size: 13px;
+      }
+      .scan-overlay.on {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      .viewer-hint {
+        padding: 10px 14px;
+        border-top: 1px solid var(--border);
+        background: var(--bg);
+        font-size: 11px;
+        color: var(--text-muted);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .viewer-hint .hint-icon {
+        font-size: 13px;
+      }
+
+      /* ─── DIVIDER ─────────────────────────── */
+      .divider {
+        width: 4px;
+        background: var(--border);
+        cursor: col-resize;
+        flex-shrink: 0;
+        transition: background 0.15s;
+      }
+      .divider:hover,
+      .divider.drag {
+        background: var(--blue-dim);
+      }
+
+      /* ─── RIGHT: TABLE ──────────────────── */
+      .table-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        background: var(--white);
+      }
+      .table-bar {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .table-bar-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .row-badge {
+        padding: 2px 8px;
+        background: var(--bg-2);
+        border-radius: 20px;
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .table-scroll {
+        flex: 1;
+        overflow: auto;
+        min-height: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      thead th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: var(--bg-2);
+        padding: 8px 14px;
+        text-align: left;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+        user-select: none;
+      }
+      thead th.r {
+        text-align: right;
+      }
+      thead th:first-child {
+        width: 30px;
+        padding: 8px;
+      }
+      thead th:last-child {
+        width: 40px;
+      }
+
+      tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background 0.1s;
+      }
+      tbody tr.dr:hover td,
+      tbody tr.cr:hover td {
+        background: var(--bg);
+      }
+      tbody tr.dr {
+        border-bottom: none;
+      }
+
+      tbody td {
+        padding: 0;
+        vertical-align: middle;
+      }
+      tbody td:last-child {
+        position: sticky;
+        right: 0;
+        background: inherit;
+      }
+
+      /* pair connector */
+      .pair-col {
+        width: 30px;
+        padding: 0;
+        text-align: center;
+      }
+      .pair-line {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 4px 0;
+        position: relative;
+      }
+      .pair-line::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--border-hi);
+        transform: translateX(-50%);
+      }
+      .pair-badge {
+        position: relative;
+        width: 22px;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 3px;
+        font-size: 9px;
+        font-weight: 700;
+      }
+      .pair-badge.dr {
+        background: var(--blue-light);
+        color: var(--blue);
+      }
+      .pair-badge.cr {
+        background: var(--bg-2);
+        color: var(--text-muted);
+      }
+
+      /* cells */
+      .ci {
+        width: 100%;
+        padding: 8px 14px;
+        background: transparent;
+        border: none;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 12px;
+        outline: none;
+      }
+      .ci:focus {
+        background: var(--blue-light);
+        box-shadow: inset 0 0 0 1px var(--blue-dim);
+      }
+      .ci.r {
+        text-align: right;
+      }
+      .ci.pos {
+        color: var(--green);
+      }
+      .ci.neg {
+        color: var(--red);
+      }
+      .ci.dim {
+        color: var(--text-muted);
+      }
+
+      .cs {
+        width: 100%;
+        padding: 8px 14px;
+        background: transparent;
+        border: none;
+        color: var(--text-dim);
+        font-family: var(--sans);
+        font-size: 12px;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+      }
+      .cs:focus {
+        background: var(--blue-light);
+        box-shadow: inset 0 0 0 1px var(--blue-dim);
+      }
+
+      .cell-del {
+        width: 36px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--text-muted);
+        border-radius: var(--radius);
+        transition: all 0.15s;
+        font-size: 13px;
+      }
+      .cell-del:hover {
+        color: var(--red);
+        background: var(--red-light);
+      }
+
+      /* table footer */
+      .table-footer {
+        padding: 10px 14px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--white);
+        flex-shrink: 0;
+      }
+      .total-area {
+        margin-left: auto;
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+      .total-lbl {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .total-val {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      /* ─── STATUS BAR ─────────────────────── */
+      footer {
+        height: 26px;
+        background: var(--bg-2);
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 0 16px;
+        font-size: 11px;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+      .sb-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--text-muted);
+        display: inline-block;
+        margin-right: 4px;
+      }
+      .sb-dot.ok {
+        background: var(--green);
+      }
+      .sb-dot.warn {
+        background: var(--amber);
+      }
+      #statusMsg {
+        margin-left: auto;
+      }
+
+      /* ─── OVERLAY / MODAL ────────────────── */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s;
+      }
+      .overlay.open {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .modal {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
+        width: 440px;
+        max-width: 95vw;
+        max-height: 85vh;
+        overflow-y: auto;
+        transform: translateY(8px);
+        transition: transform 0.18s;
+      }
+      .overlay.open .modal {
+        transform: translateY(0);
+      }
+      .modal-head {
+        padding: 20px 24px 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+      .modal-title {
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .modal-close {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: var(--radius);
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .modal-close:hover {
+        background: var(--bg-2);
+      }
+      .modal-body {
+        padding: 16px 24px;
+      }
+      .modal-foot {
+        padding: 0 24px 20px;
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .flabel {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+      }
+      .finput {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid var(--border-hi);
+        border-radius: var(--radius);
+        font-family: var(--sans);
+        font-size: 13px;
+        color: var(--text);
+        background: var(--white);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .finput:focus {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+      .fselect {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid var(--border-hi);
+        border-radius: var(--radius);
+        font-family: var(--sans);
+        font-size: 13px;
+        color: var(--text);
+        background: var(--white);
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+      }
+      .fselect:focus {
+        border-color: var(--blue);
+      }
+      .frow {
+        margin-bottom: 14px;
+      }
+
+      .ocr-box {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        font-size: 15px;
+        color: var(--text);
+        min-height: 44px;
+        margin-bottom: 12px;
+        outline: none;
+      }
+      .ocr-box:focus {
+        border-color: var(--blue);
+        background: var(--white);
+      }
+
+      .drop-zone {
+        border: 2px dashed var(--border-hi);
+        border-radius: var(--radius);
+        padding: 28px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.15s;
+        color: var(--text-muted);
+        margin-bottom: 14px;
+      }
+      .drop-zone:hover {
+        border-color: var(--blue);
+        background: var(--blue-light);
+        color: var(--blue);
+      }
+      .drop-zone input {
+        display: none;
+      }
+
+      .coa-list {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        display: none;
+        max-height: 150px;
+        overflow-y: auto;
+        margin-bottom: 14px;
+      }
+      .coa-row {
+        display: flex;
+        gap: 12px;
+        padding: 7px 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+      }
+      .coa-row:last-child {
+        border-bottom: none;
+      }
+      .coa-id {
+        color: var(--blue);
+        font-weight: 600;
+        min-width: 48px;
+      }
+      .coa-name {
+        color: var(--text-dim);
+      }
+
+      /* col mapper */
+      .map-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .map-row:last-child {
+        border-bottom: none;
+      }
+      .map-vis {
+        flex: 1;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+      }
+      .map-arrow {
+        color: var(--text-muted);
+      }
+      .map-exp {
+        flex: 1;
+      }
+
+      /* spinner */
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border);
+        border-top-color: var(--blue);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* toast */
+      .toast-wrap {
+        position: fixed;
+        bottom: 36px;
+        right: 16px;
+        z-index: 3000;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        pointer-events: none;
+      }
+      .toast {
+        padding: 9px 16px;
+        border-radius: var(--radius);
+        font-size: 12px;
+        font-weight: 500;
+        box-shadow: var(--shadow-md);
+        animation:
+          tin 0.18s ease,
+          tout 0.18s 2.8s ease forwards;
+      }
+      .toast.ok {
+        background: var(--green);
+        color: #fff;
+      }
+      .toast.err {
+        background: var(--red);
+        color: #fff;
+      }
+      .toast.info {
+        background: var(--blue);
+        color: #fff;
+      }
+      .toast.warn {
+        background: var(--amber);
+        color: #fff;
+      }
+      @keyframes tin {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes tout {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+
+      .hr {
+        height: 1px;
+        background: var(--border);
+        margin: 14px 0;
+      }
+      .svg-black {
+        fill: var(--text);
+      }
+      .svg-white {
+        fill: var(--white);
+      }
+      .small-btn {
+        font-size: 10px;
+        padding: 8px 8px;
+      }
+      .hover {}
+      .hover:hover {
+        background: var(--soft-black);
+        color: var(--white);
+      }
+      .hover:hover * {
+        fill: var(--white);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ─── HEADER ─────────────────────────────────── -->
+    <header>
+      <div class="logo">PeachTree Invoice</div>
+
+      <div class="sep"></div>
+
+      <button class="btn hover btn-outline btn-sm" onclick="openCOA()">
+        <svg
+          class="svg-black"
+          xmlns="http://www.w3.org/2000/svg"
+          width="13px"
+          height="13px"
+          viewBox="0 0 1.04 1.04"
+          enable-background="new 0 0 52 52"
+          xml:space="preserve"
+        >
+          <g>
+            <path
+              d="M0.97 0.62h-0.06a0.03 0.03 0 0 0 -0.03 0.03v0.2a0.031 0.031 0 0 1 -0.03 0.03H0.19A0.03 0.03 0 0 1 0.16 0.851V0.651A0.03 0.03 0 0 0 0.13 0.62H0.07a0.03 0.03 0 0 0 -0.03 0.03v0.27c0 0.044 0.036 0.08 0.08 0.08h0.8a0.08 0.08 0 0 0 0.08 -0.081V0.65a0.03 0.03 0 0 0 -0.03 -0.03"
+            />
+            <path
+              d="M0.5 0.752a0.029 0.029 0 0 0 0.042 0L0.812 0.482a0.029 0.029 0 0 0 0 -0.042L0.771 0.398a0.029 0.029 0 0 0 -0.042 0L0.617 0.51C0.605 0.522 0.583 0.515 0.583 0.496V0.07C0.58 0.054 0.564 0.04 0.55 0.04H0.49a0.03 0.03 0 0 0 -0.03 0.03v0.424c0 0.018 -0.022 0.026 -0.034 0.014L0.314 0.396a0.029 0.029 0 0 0 -0.042 0L0.23 0.44a0.029 0.029 0 0 0 0 0.042z"
+            />
+          </g>
+        </svg>
+        Load Chart of Accounts
+      </button>
+
+      <button class="btn hover btn-primary btn-sm" onclick="exportCSV()">
+        <svg
+          width="13px"
+          height="13px"
+          viewBox="0 0 17 17"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M0.000215124 13.6948C-0.000256281 14.1993 0.114908 14.6971 0.336859 15.1501C0.55881 15.6031 0.88164 15.9991 1.28054 16.3078C1.67945 16.6166 2.14381 16.8297 2.63794 16.9309C3.13208 17.0321 3.64285 17.0187 4.13099 16.8917C4.61913 16.7647 5.07166 16.5274 5.4538 16.1982C5.83595 15.869 6.13754 15.4565 6.3354 14.9925C6.53327 14.5285 6.62213 14.0253 6.59518 13.5216C6.56823 13.0179 6.42617 12.527 6.17992 12.0868L10.7997 7.46664L10.7997 11.2948L12.5996 11.2948L12.5996 5.29456C12.5996 5.05586 12.5048 4.82693 12.336 4.65815C12.1672 4.48936 11.9383 4.39453 11.6997 4.39453L5.69994 4.39453L5.69994 6.19459L9.52776 6.19459L4.90798 10.8147C4.40586 10.5345 3.83924 10.3904 3.26427 10.3967C2.6893 10.4029 2.12594 10.5593 1.63001 10.8503C1.13408 11.1413 0.722808 11.5569 0.436935 12.0559C0.151062 12.5548 0.000515585 13.1198 0.000215124 13.6948ZM4.79998 13.6948C4.79998 13.9915 4.71201 14.2815 4.5472 14.5282C4.38239 14.7749 4.14813 14.9672 3.87405 15.0807C3.59998 15.1942 3.29839 15.224 3.00744 15.1661C2.71648 15.1082 2.44921 14.9653 2.23945 14.7555C2.02968 14.5458 1.88683 14.2785 1.82895 13.9875C1.77108 13.6965 1.80078 13.3949 1.9143 13.1208C2.02783 12.8467 2.22008 12.6124 2.46674 12.4476C2.7134 12.2828 3.0034 12.1948 3.30006 12.1948C3.69786 12.1948 4.07938 12.3528 4.36067 12.6341C4.64196 12.9155 4.79998 13.297 4.79998 13.6948Z"
+            class="svg-white"
+          />
+          <path
+            d="M8.89648 16.2005L13.6963 16.2005C14.5714 16.2005 15.4108 15.8529 16.0296 15.234C16.6484 14.6151 16.9961 13.7757 16.9961 12.9004L16.9961 3.30011C16.9961 2.42487 16.6484 1.58547 16.0296 0.966581C15.4108 0.34769 14.5714 6.36928e-07 13.6963 5.98673e-07L4.09671 1.79064e-07C3.22154 1.40809e-07 2.38221 0.347689 1.76337 0.96658C1.14453 1.58547 0.796874 2.42487 0.796873 3.30011L0.796873 8.10027L2.59679 8.10027L2.59679 3.30011C2.59679 2.90227 2.75481 2.52073 3.0361 2.23942C3.3174 1.9581 3.69891 1.80006 4.09671 1.80006L13.6963 1.80006C14.0941 1.80006 14.4756 1.9581 14.7569 2.23942C15.0382 2.52073 15.1962 2.90227 15.1962 3.30011L15.1962 12.9004C15.1962 13.2983 15.0382 13.6798 14.7569 13.9611C14.4756 14.2424 14.0941 14.4005 13.6963 14.4005L8.89648 14.4005L8.89648 16.2005Z"
+            class="svg-white"
+          />
+        </svg>
+        Export CSV
+      </button>
+    </header>
+
+    <!-- ─── MAIN ───────────────────────────────────── -->
+    <main>
+      <!-- LEFT: CAMERA -->
+      <section class="viewer" id="viewerPanel">
+        <div class="viewer-bar">
+          <button class="btn hover small-btn" onclick="startCam()">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g clip-path="url(#clip0_470_444)">
+                <path
+                  d="M12.528 4.67108L4.34577 0.369645C3.90414 0.129136 3.40049 0.00151335 2.88705 1.33763e-05C2.37362 -0.0014866 1.86909 0.123191 1.4258 0.361115C0.982514 0.599039 0.616604 0.941546 0.366021 1.35311C0.115438 1.76468 -0.0106927 2.23032 0.000709974 2.70175V11.3564C0.000636394 11.7079 0.0769032 12.0559 0.225047 12.38C0.373191 12.7041 0.590236 12.9978 0.863479 13.2439C1.13672 13.49 1.46067 13.6836 1.81638 13.8134C2.17208 13.9431 2.55238 14.0064 2.93504 13.9995C3.45065 14.0015 3.95736 13.8762 4.4022 13.6367L12.528 9.33529C12.9744 9.10574 13.3462 8.77106 13.6049 8.3657C13.8636 7.96034 14 7.49896 14 7.0291C14 6.55923 13.8636 6.09785 13.6049 5.69249C13.3462 5.28713 12.9744 4.95245 12.528 4.7229V4.67108ZM11.6816 7.93602L3.49933 12.2893C3.31746 12.38 3.11378 12.4275 2.90682 12.4275C2.69986 12.4275 2.49618 12.38 2.31431 12.2893C2.13045 12.1979 1.97618 12.0635 1.86716 11.8996C1.75814 11.7358 1.69826 11.5484 1.69359 11.3564V2.64992C1.69826 2.45797 1.75814 2.27056 1.86716 2.10673C1.97618 1.9429 2.13045 1.80847 2.31431 1.71708C2.50275 1.61606 2.71685 1.56244 2.93504 1.56161C3.15287 1.56477 3.36634 1.61823 3.55576 1.71708L11.738 6.07034C11.9267 6.16342 12.0844 6.30173 12.1943 6.47055C12.3042 6.63937 12.3623 6.83239 12.3623 7.0291C12.3623 7.2258 12.3042 7.41882 12.1943 7.58764C12.0844 7.75646 11.9267 7.89477 11.738 7.98785L11.6816 7.93602Z"
+                  class="svg-black"
+                />
+              </g>
+              <defs>
+                <clipPath id="clip0_470_444">
+                  <rect width="14" height="14" class="svg-white" />
+                </clipPath>
+              </defs>
+            </svg>
+
+            Start Camera
+          </button>
+          <button class="btn hover small-btn" id="btnCapture" onclick="capFrame()">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g clip-path="url(#clip0_470_441)">
+                <path
+                  d="M0.7 4.9C0.885652 4.9 1.0637 4.82625 1.19497 4.69497C1.32625 4.5637 1.4 4.38565 1.4 4.2V2.1C1.4 1.91435 1.47375 1.7363 1.60503 1.60503C1.7363 1.47375 1.91435 1.4 2.1 1.4H4.2C4.38565 1.4 4.5637 1.32625 4.69497 1.19497C4.82625 1.0637 4.9 0.885652 4.9 0.7C4.9 0.514349 4.82625 0.336301 4.69497 0.205025C4.5637 0.0737499 4.38565 0 4.2 0H2.1C1.54305 0 1.0089 0.221249 0.615076 0.615076C0.221249 1.0089 0 1.54305 0 2.1V4.2C0 4.38565 0.0737499 4.5637 0.205025 4.69497C0.336301 4.82625 0.514349 4.9 0.7 4.9ZM4.2 12.6H2.1C1.91435 12.6 1.7363 12.5263 1.60503 12.395C1.47375 12.2637 1.4 12.0857 1.4 11.9V9.8C1.4 9.61435 1.32625 9.4363 1.19497 9.30502C1.0637 9.17375 0.885652 9.1 0.7 9.1C0.514349 9.1 0.336301 9.17375 0.205025 9.30502C0.0737499 9.4363 0 9.61435 0 9.8V11.9C0 12.457 0.221249 12.9911 0.615076 13.3849C1.0089 13.7788 1.54305 14 2.1 14H4.2C4.38565 14 4.5637 13.9262 4.69497 13.795C4.82625 13.6637 4.9 13.4857 4.9 13.3C4.9 13.1143 4.82625 12.9363 4.69497 12.805C4.5637 12.6737 4.38565 12.6 4.2 12.6ZM7 4.2C6.44621 4.2 5.90486 4.36422 5.4444 4.67189C4.98395 4.97955 4.62506 5.41685 4.41314 5.92849C4.20121 6.44012 4.14576 7.00311 4.2538 7.54625C4.36184 8.0894 4.62851 8.58831 5.0201 8.9799C5.41169 9.37148 5.9106 9.63816 6.45375 9.7462C6.99689 9.85424 7.55988 9.79879 8.07151 9.58686C8.58315 9.37494 9.02045 9.01605 9.32811 8.5556C9.63578 8.09514 9.8 7.55379 9.8 7C9.8 6.25739 9.505 5.5452 8.9799 5.0201C8.4548 4.495 7.74261 4.2 7 4.2ZM7 8.4C6.72311 8.4 6.45243 8.31789 6.2222 8.16406C5.99197 8.01022 5.81253 7.79157 5.70657 7.53576C5.60061 7.27994 5.57288 6.99845 5.6269 6.72687C5.68092 6.4553 5.81426 6.20584 6.01005 6.01005C6.20584 5.81426 6.4553 5.68092 6.72687 5.6269C6.99845 5.57288 7.27994 5.60061 7.53576 5.70657C7.79157 5.81253 8.01022 5.99197 8.16406 6.2222C8.31789 6.45243 8.4 6.72311 8.4 7C8.4 7.3713 8.2525 7.7274 7.98995 7.98995C7.7274 8.2525 7.3713 8.4 7 8.4ZM11.9 0H9.8C9.61435 0 9.4363 0.0737499 9.30502 0.205025C9.17375 0.336301 9.1 0.514349 9.1 0.7C9.1 0.885652 9.17375 1.0637 9.30502 1.19497C9.4363 1.32625 9.61435 1.4 9.8 1.4H11.9C12.0857 1.4 12.2637 1.47375 12.395 1.60503C12.5263 1.7363 12.6 1.91435 12.6 2.1V4.2C12.6 4.38565 12.6737 4.5637 12.805 4.69497C12.9363 4.82625 13.1143 4.9 13.3 4.9C13.4857 4.9 13.6637 4.82625 13.795 4.69497C13.9262 4.5637 14 4.38565 14 4.2V2.1C14 1.54305 13.7788 1.0089 13.3849 0.615076C12.9911 0.221249 12.457 0 11.9 0ZM13.3 9.1C13.1143 9.1 12.9363 9.17375 12.805 9.30502C12.6737 9.4363 12.6 9.61435 12.6 9.8V11.9C12.6 12.0857 12.5263 12.2637 12.395 12.395C12.2637 12.5263 12.0857 12.6 11.9 12.6H9.8C9.61435 12.6 9.4363 12.6737 9.30502 12.805C9.17375 12.9363 9.1 13.1143 9.1 13.3C9.1 13.4857 9.17375 13.6637 9.30502 13.795C9.4363 13.9262 9.61435 14 9.8 14H11.9C12.457 14 12.9911 13.7788 13.3849 13.3849C13.7788 12.9911 14 12.457 14 11.9V9.8C14 9.61435 13.9262 9.4363 13.795 9.30502C13.6637 9.17375 13.4857 9.1 13.3 9.1Z"
+                  class="svg-black"
+                />
+              </g>
+              <defs>
+                <clipPath id="clip0_470_441">
+                  <rect width="14" height="14" class="svg-white" />
+                </clipPath>
+              </defs>
+            </svg>
+
+            Capture
+          </button>
+          <button class="btn hover small-btn" onclick="stopCam()">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g clip-path="url(#clip0_470_438)">
+                <path
+                  d="M0 2C0 1.46957 0.210713 0.960859 0.585786 0.585786C0.960859 0.210713 1.46957 0 2 0H12C12.5304 0 13.0391 0.210713 13.4142 0.585786C13.7893 0.960859 14 1.46957 14 2V12C14 12.5304 13.7893 13.0391 13.4142 13.4142C13.0391 13.7893 12.5304 14 12 14H2C1.46957 14 0.960859 13.7893 0.585786 13.4142C0.210713 13.0391 0 12.5304 0 12V2ZM12.5 1.5L1.5 1.5L1.5 12.5H12.5V1.5Z"
+                  class="svg-black"
+                />
+              </g>
+              <defs>
+                <clipPath id="clip0_470_438">
+                  <rect width="14" height="14" fill="white" />
+                </clipPath>
+              </defs>
+            </svg>
+
+            Stop
+          </button>
+          <button class="btn hover small-btn" onclick="loadImg()">
+            <svg
+              class="svg-black"
+              xmlns="http://www.w3.org/2000/svg"
+              width="12px"
+              height="12px"
+              viewBox="0 0 1.04 1.04"
+              enable-background="new 0 0 52 52"
+              xml:space="preserve"
+            >
+              <g>
+                <path
+                  d="M0.97 0.62h-0.06a0.03 0.03 0 0 0 -0.03 0.03v0.2a0.031 0.031 0 0 1 -0.03 0.03H0.19A0.03 0.03 0 0 1 0.16 0.851V0.651A0.03 0.03 0 0 0 0.13 0.62H0.07a0.03 0.03 0 0 0 -0.03 0.03v0.27c0 0.044 0.036 0.08 0.08 0.08h0.8a0.08 0.08 0 0 0 0.08 -0.081V0.65a0.03 0.03 0 0 0 -0.03 -0.03"
+                />
+                <path
+                  d="M0.5 0.752a0.029 0.029 0 0 0 0.042 0L0.812 0.482a0.029 0.029 0 0 0 0 -0.042L0.771 0.398a0.029 0.029 0 0 0 -0.042 0L0.617 0.51C0.605 0.522 0.583 0.515 0.583 0.496V0.07C0.58 0.054 0.564 0.04 0.55 0.04H0.49a0.03 0.03 0 0 0 -0.03 0.03v0.424c0 0.018 -0.022 0.026 -0.034 0.014L0.314 0.396a0.029 0.029 0 0 0 -0.042 0L0.23 0.44a0.029 0.029 0 0 0 0 0.042z"
+                />
+              </g>
+            </svg>
+            Load Image
+          </button>
+          <input
+            type="file"
+            id="imgFile"
+            accept="image/*"
+            style="display: none"
+            onchange="onImgFile(event)"
+          />
+        </div>
+
+        <div class="cam-wrap" id="camWrap">
+          <img id="camFeed" alt="" style="display: none" />
+          <canvas id="selCanvas"></canvas>
+          <div class="cam-placeholder" id="camPH">
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              style="opacity: 0.25"
+            >
+              <rect x="2" y="7" width="20" height="14" rx="2" />
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+            <span style="font-size: 13px">Start camera or load an image</span>
+          </div>
+          <div class="scan-overlay" id="scanOvl">
+            <div class="spinner"></div>
+            <span>Reading…</span>
+          </div>
+        </div>
+
+        <div class="viewer-hint">
+          <span class="hint-icon">✦</span>
+          Drag on the document to scan a field. Fields fill in sequence: Vendor
+          → Date → Reference → Description → Amount.
+        </div>
+      </section>
+
+      <div class="divider" id="divider"></div>
+
+      <!-- RIGHT: TABLE -->
+      <section class="table-panel">
+        <div class="table-bar">
+          <span class="table-bar-title">Journal Entries</span>
+          <span class="row-badge" id="rowBadge">0 entries</span>
+          <div style="flex: 1"></div>
+          <button class="btn btn-outline btn-sm" onclick="addPair()">
+            ⇅ Add Double Entry
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="openColMapper()">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M15.586 3.414a2 2 0 1 1 2.828 2.828l-8.5 8.5L7 16l1.257-2.914z"
+              />
+            </svg>
+            Column Mapping
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="clearAll()">
+            Clear
+          </button>
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Vendor Name</th>
+                <th>Date</th>
+                <th>Reference #</th>
+                <th>Description</th>
+                <th class="r">Amount</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="table-footer">
+          <span style="font-size: 11px; color: var(--text-muted)" id="footNote"
+            >No entries yet</span
+          >
+          <div class="total-area">
+            <span class="total-lbl">Total</span>
+            <span class="total-val" id="totalVal">0.00</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- STATUS BAR -->
+    <footer>
+      <span
+        ><span class="sb-dot" id="dCam"></span
+        ><span id="lCam">Camera off</span></span
+      >
+      <span
+        ><span class="sb-dot" id="dOcr"></span
+        ><span id="lOcr">OCR ready</span></span
+      >
+      <span
+        ><span class="sb-dot" id="dAi"></span
+        ><span id="lAi">AI ready</span></span
+      >
+      <span id="statusMsg">Ready</span>
+    </footer>
+
+    <!-- ─── TOASTS ─────────────────────────────────── -->
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <!-- ─── COA MODAL ─────────────────────────────── -->
+    <div class="overlay" id="coaOvl">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title">Import Chart of Accounts</div>
+          <button class="modal-close" onclick="closeCOA()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p
+            style="
+              font-size: 12px;
+              color: var(--text-muted);
+              margin-bottom: 14px;
+            "
+          >
+            Upload your Peachtree Sage 50 CSV export. Expected format:
+            <code
+              style="
+                background: var(--bg-2);
+                padding: 1px 5px;
+                border-radius: 3px;
+              "
+              >AccountID, Name, Type, …</code
+            >
+          </p>
+          <label class="drop-zone" id="coaDrop">
+            <input
+              type="file"
+              id="coaFile"
+              accept=".csv"
+              onchange="onCOAFile(event)"
+            />
+            <div style="font-size: 22px; margin-bottom: 6px">📄</div>
+            <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px">
+              Click or drag CSV here
+            </div>
+            <div style="font-size: 11px">CHART.CSV · Peachtree format</div>
+          </label>
+          <div class="coa-list" id="coaList"></div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-outline" onclick="closeCOA()">Cancel</button>
+          <button
+            class="btn btn-primary"
+            id="btnLoadCOA"
+            onclick="confirmCOA()"
+            disabled
+          >
+            Load Accounts
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── OCR CONFIRM MODAL ─────────────────────── -->
+    <div class="overlay" id="ocrOvl">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title">Confirm Scanned Value</div>
+          <button class="modal-close" onclick="closeOCR()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="frow">
+            <label class="flabel">Assign to field</label>
+            <select class="fselect" id="ocrField">
+              <option value="vendor">Vendor Name</option>
+              <option value="date">Date</option>
+              <option value="ref">Reference #</option>
+              <option value="desc">Description</option>
+              <option value="amountRaw">Amount</option>
+            </select>
+          </div>
+          <div class="frow">
+            <label class="flabel">Detected text — edit if needed</label>
+            <div class="ocr-box" id="ocrBox" contenteditable="true"></div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-outline" onclick="closeOCR()">Discard</button>
+          <button class="btn btn-primary" onclick="acceptOCR()">
+            Accept → Table
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── COLUMN MAPPER ─────────────────────────── -->
+    <div class="overlay" id="colOvl">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="modal-title">Column Mapping</div>
+          <button class="modal-close" onclick="closeColMapper()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p
+            style="
+              font-size: 12px;
+              color: var(--text-muted);
+              margin-bottom: 14px;
+            "
+          >
+            Maps each visible column to its Peachtree export field.
+          </p>
+          <div id="mapList"></div>
+          <div class="hr"></div>
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px">
+            Add a column
+          </div>
+          <div class="frow">
+            <label class="flabel">Column label</label>
+            <input
+              class="finput"
+              id="newColName"
+              placeholder="e.g. Department"
+            />
+          </div>
+          <div class="frow">
+            <label class="flabel">Maps to Peachtree field</label>
+            <select class="fselect" id="newColTarget">
+              <option value="">— select —</option>
+              <option>Transaction_Date</option>
+              <option>Reference_Number</option>
+              <option>Secondary_ID</option>
+              <option>Journal_Type_ID</option>
+              <option>Account_ID</option>
+              <option>Description_Memo</option>
+              <option>Amount</option>
+              <option>Allocation_Code</option>
+              <option>Is_Reconciled</option>
+              <option>Accounting_Period</option>
+              <option>Distribution_Line</option>
+              <option>Tax_Status_Flag</option>
+              <option>Internal_System_Flag</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-outline" onclick="closeColMapper()">
+            Close
+          </button>
+          <button class="btn btn-primary" onclick="addCol()">Add Column</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ── STATE ────────────────────────────────────────────────────
+      const S = {
+        coa: [],
+        coaLoaded: false,
+        camOn: false,
+        frameLoop: null,
+        pairs: [],
+        pairCtr: 0,
+        pendingField: null,
+        // scan sequence: next field to fill when user drags
+        sequence: ["vendor", "date", "ref", "desc", "amountRaw"],
+        seqIdx: 0,
+        colMap: {
+          "Vendor Name": "Description_Memo",
+          Date: "Transaction_Date",
+          "Reference #": "Reference_Number",
+          Description: "Description_Memo",
+          Amount: "Amount",
+        },
+        isDrag: false,
+        dragStart: null,
+        sel: null,
+      };
+
+      const EXPORT_COLS = [
+        "Transaction_Date",
+        "Reference_Number",
+        "Secondary_ID",
+        "Journal_Type_ID",
+        "Account_ID",
+        "Description_Memo",
+        "Amount",
+        "Allocation_Code",
+        "Is_Reconciled",
+        "Accounting_Period",
+        "Distribution_Line",
+        "Tax_Status_Flag",
+        "Internal_System_Flag",
+      ];
+
+      const SEQ_LABELS = {
+        vendor: "Vendor Name",
+        date: "Date",
+        ref: "Reference #",
+        desc: "Description",
+        amountRaw: "Amount",
+      };
+
+      // ── API ──────────────────────────────────────────────────────
+      const api = {
+        async call(fn, ...args) {
+          if (window.pywebview?.api) {
+            try {
+              return await window.pywebview.api[fn](...args);
+            } catch (e) {
+              console.warn(fn, e);
+              return null;
+            }
+          }
+          console.log("[mock]", fn, args);
+          return null;
+        },
+        getFrame() {
+          return this.call("get_frame");
+        },
+        scanRegion(x, y, w, h, f) {
+          return this.call("scan_region", x, y, w, h, f);
+        },
+        startCamera() {
+          return this.call("start_camera");
+        },
+        stopCamera() {
+          return this.call("stop_camera");
+        },
+        exportCSV(d) {
+          return this.call("export_csv", d);
+        },
+        classifyAccount(d) {
+          return this.call("classify_account", d);
+        },
+      };
+
+      // ── UTILS ────────────────────────────────────────────────────
+      function toast(msg, type = "info") {
+        const el = document.createElement("div");
+        el.className = `toast ${type}`;
+        el.textContent = msg;
+        document.getElementById("toastWrap").appendChild(el);
+        setTimeout(() => el.remove(), 3100);
+      }
+      function setStatus(m) {
+        document.getElementById("statusMsg").textContent = m;
+      }
+      function dot(id, state) {
+        const d = document.getElementById(id);
+        d.className =
+          "sb-dot" + (state === "ok" ? " ok" : state === "warn" ? " warn" : "");
+      }
+      function esc(s) {
+        return (s || "").replace(/"/g, "&quot;");
+      }
+
+      // ── CAMERA ───────────────────────────────────────────────────
+      async function startCam() {
+        await api.startCamera();
+        S.camOn = true;
+        dot("dCam", "ok");
+        document.getElementById("lCam").textContent = "Camera live";
+        document.getElementById("camPH").style.display = "none";
+        document.getElementById("camFeed").style.display = "block";
+        S.frameLoop = setInterval(async () => {
+          if (!S.camOn) return;
+          const b = await api.getFrame();
+          if (b)
+            document.getElementById("camFeed").src =
+              "data:image/jpeg;base64," + b;
+        }, 60);
+        toast("Camera started", "ok");
+      }
+      async function stopCam() {
+        await api.stopCamera();
+        S.camOn = false;
+        clearInterval(S.frameLoop);
+        dot("dCam", "");
+        document.getElementById("lCam").textContent = "Camera off";
+      }
+      async function capFrame() {
+        const b = await api.getFrame();
+        if (b) {
+          document.getElementById("camFeed").src =
+            "data:image/jpeg;base64," + b;
+          document.getElementById("camFeed").style.display = "block";
+          document.getElementById("camPH").style.display = "none";
+          toast("Captured", "ok");
+        }
+      }
+      function loadImg() {
+        document.getElementById("imgFile").click();
+      }
+      function onImgFile(e) {
+        const f = e.target.files[0];
+        if (!f) return;
+        const img = document.getElementById("camFeed");
+        img.src = URL.createObjectURL(f);
+        img.style.display = "block";
+        document.getElementById("camPH").style.display = "none";
+        syncCanvas();
+        toast("Image loaded", "ok");
+      }
+
+      // ── CANVAS ───────────────────────────────────────────────────
+      const canvas = document.getElementById("selCanvas");
+      const ctx = canvas.getContext("2d");
+
+      function syncCanvas() {
+        const w = document.getElementById("camWrap");
+        canvas.width = w.offsetWidth;
+        canvas.height = w.offsetHeight;
+      }
+      window.addEventListener("resize", syncCanvas);
+      syncCanvas();
+
+      canvas.addEventListener("mousedown", (e) => {
+        S.isDrag = true;
+        const r = canvas.getBoundingClientRect();
+        S.dragStart = { x: e.clientX - r.left, y: e.clientY - r.top };
+        S.sel = null;
+      });
+      canvas.addEventListener("mousemove", (e) => {
+        if (!S.isDrag) return;
+        const r = canvas.getBoundingClientRect();
+        const ex = e.clientX - r.left,
+          ey = e.clientY - r.top;
+        S.sel = {
+          x: Math.min(S.dragStart.x, ex),
+          y: Math.min(S.dragStart.y, ey),
+          w: Math.abs(ex - S.dragStart.x),
+          h: Math.abs(ey - S.dragStart.y),
+        };
+        drawSel();
+      });
+      canvas.addEventListener("mouseup", async () => {
+        if (!S.isDrag) return;
+        S.isDrag = false;
+        if (!S.sel || S.sel.w < 8 || S.sel.h < 8) return;
+        await doOCR();
+      });
+
+      function drawSel() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!S.sel) return;
+        const { x, y, w, h } = S.sel;
+        ctx.strokeStyle = "#2563eb";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 3]);
+        ctx.strokeRect(x, y, w, h);
+        ctx.fillStyle = "rgba(37,99,235,.07)";
+        ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = "#2563eb";
+        [
+          [x, y],
+          [x + w, y],
+          [x, y + h],
+          [x + w, y + h],
+        ].forEach(([cx, cy]) => ctx.fillRect(cx - 3, cy - 3, 6, 6));
+      }
+
+      async function doOCR() {
+        document.getElementById("scanOvl").classList.add("on");
+        dot("dOcr", "warn");
+        setStatus("Scanning…");
+
+        const img = document.getElementById("camFeed");
+        const rect = img.getBoundingClientRect();
+        const sx = img.naturalWidth / rect.width;
+        const sy = img.naturalHeight / rect.height;
+        const { x, y, w, h } = S.sel;
+
+        // current field in sequence
+        const fieldKey = S.sequence[S.seqIdx % S.sequence.length];
+
+        const result = await api.scanRegion(
+          Math.round(x * sx),
+          Math.round(y * sy),
+          Math.round(w * sx),
+          Math.round(h * sy),
+          fieldKey,
+        );
+        document.getElementById("scanOvl").classList.remove("on");
+        dot("dOcr", "ok");
+
+        // show confirm modal pre-set to current sequence field
+        const text = result?.text ?? "(mock result)";
+        openOCRConfirm(fieldKey, text);
+      }
+
+      // ── OCR CONFIRM ──────────────────────────────────────────────
+      function openOCRConfirm(fieldKey, text) {
+        const sel = document.getElementById("ocrField");
+        sel.value = fieldKey;
+        const box = document.getElementById("ocrBox");
+        box.textContent = text;
+        document.getElementById("ocrOvl").classList.add("open");
+        S.pendingField = fieldKey;
+      }
+      function closeOCR() {
+        document.getElementById("ocrOvl").classList.remove("open");
+      }
+      function acceptOCR() {
+        const field = document.getElementById("ocrField").value;
+        const text = document.getElementById("ocrBox").textContent.trim();
+        if (!text) return;
+        fillField(field, text);
+        // advance sequence
+        S.seqIdx++;
+        closeOCR();
+        toast(`${SEQ_LABELS[field] || field} filled`, "ok");
+        setStatus(`Set: ${text}`);
+        // redraw canvas clear
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // ── FILL FIELD INTO LAST INCOMPLETE PAIR ─────────────────────
+      function fillField(field, value) {
+        // find last pending pair or create one
+        let p = S.pairs.find((x) => x.status === "pending" && !x[field]);
+        if (!p) {
+          p = makePair();
+          S.pairs.push(p);
+        }
+        p[field] = value;
+        if (field === "amountRaw") {
+          p.amount = parseFloat(value.replace(/[^0-9.-]/g, "")) || 0;
+          // if all 5 fields filled mark complete
+          if (p.vendor && p.date && p.ref && p.desc && p.amount)
+            p.status = "complete";
+          if (S.coaLoaded && p.desc) classifyPair(p);
+        }
+        render();
+      }
+
+      function makePair() {
+        return {
+          id: ++S.pairCtr,
+          vendor: "",
+          date: "",
+          ref: "",
+          desc: "",
+          amountRaw: "",
+          amount: 0,
+          drAcct: "",
+          crAcct: "",
+          status: "pending",
+        };
+      }
+
+      function addPair() {
+        S.pairs.push(makePair());
+        render();
+        toast("Double entry row added", "info");
+      }
+
+      function delPair(id) {
+        S.pairs = S.pairs.filter((p) => p.id !== id);
+        render();
+      }
+
+      async function classifyPair(p) {
+        dot("dAi", "warn");
+        setStatus("Classifying account…");
+        const r = await api.classifyAccount(p.desc);
+        dot("dAi", "ok");
+        if (r?.account_id) {
+          p.drAcct = r.account_id;
+          render();
+          toast(`Account → ${r.account_id}`, "info");
+          setStatus(`Account: ${r.account_id}`);
+        }
+      }
+
+      // ── RENDER ───────────────────────────────────────────────────
+      function render() {
+        const tb = document.getElementById("tbody");
+        tb.innerHTML = "";
+
+        S.pairs.forEach((p) => {
+          const crAmt = p.amount ? (-p.amount).toFixed(2) : "";
+
+          // DR
+          const dr = document.createElement("tr");
+          dr.className = "dr";
+          dr.innerHTML = `
+      <td class="pair-col"><div class="pair-line"><div class="pair-badge dr">DR</div></div></td>
+      <td><input class="ci" value="${esc(p.vendor)}" placeholder="Vendor name"
+          oninput="upd(${p.id},'vendor',this.value)"></td>
+      <td><input class="ci" value="${esc(p.date)}" placeholder="MM/DD/YY" style="min-width:90px"
+          oninput="upd(${p.id},'date',this.value)"></td>
+      <td><input class="ci" value="${esc(p.ref)}" placeholder="INV-0001"
+          oninput="upd(${p.id},'ref',this.value)"></td>
+      <td><input class="ci" value="${esc(p.desc)}" placeholder="Description"
+          oninput="upd(${p.id},'desc',this.value)"></td>
+      <td><input class="ci r pos" value="${esc(p.amountRaw)}" placeholder="0.00"
+          oninput="updAmt(${p.id},this.value)"></td>
+      <td><div class="cell-del" onclick="delPair(${p.id})">✕</div></td>
+    `;
+
+          // CR
+          const cr = document.createElement("tr");
+          cr.className = "cr";
+          cr.innerHTML = `
+      <td class="pair-col"><div class="pair-line" style="padding:0"><div class="pair-badge cr">CR</div></div></td>
+      <td><input class="ci dim" value="" placeholder="Cash / Bank account"></td>
+      <td><input class="ci dim" value="${esc(p.date)}" readonly style="opacity:.5"></td>
+      <td><input class="ci dim" value="${esc(p.ref)}"  readonly style="opacity:.5"></td>
+      <td>
+        <select class="cs" onchange="upd(${p.id},'crAcct',this.value)">
+          ${buildAccts(p.crAcct)}
+        </select>
+      </td>
+      <td><input class="ci r neg" value="${crAmt}" placeholder="0.00" readonly></td>
+      <td></td>
+    `;
+
+          tb.appendChild(dr);
+          tb.appendChild(cr);
+        });
+
+        const total = S.pairs.reduce((s, p) => s + (p.amount || 0), 0);
+        const pending = S.pairs.filter((p) => p.status === "pending").length;
+        document.getElementById("rowBadge").textContent =
+          `${S.pairs.length} ${S.pairs.length === 1 ? "entry" : "entries"}`;
+        document.getElementById("footNote").textContent = S.pairs.length
+          ? `${S.pairs.length} pair${S.pairs.length > 1 ? "s" : ""} · ${pending} pending`
+          : "No entries yet — drag on the document to scan";
+        document.getElementById("totalVal").textContent = total.toFixed(2);
+      }
+
+      function upd(id, field, val) {
+        const p = S.pairs.find((x) => x.id === id);
+        if (p) p[field] = val;
+        render();
+      }
+      function updAmt(id, val) {
+        const p = S.pairs.find((x) => x.id === id);
+        if (!p) return;
+        p.amountRaw = val;
+        p.amount = parseFloat(val.replace(/[^0-9.-]/g, "")) || 0;
+        render();
+      }
+
+      function buildAccts(current) {
+        if (!S.coaLoaded) return `<option value="">— load COA —</option>`;
+        return (
+          '<option value="">— Credit account —</option>' +
+          S.coa
+            .map(
+              (a) =>
+                `<option value="${a.id}"${a.id === current ? " selected" : ""}>${a.id} — ${a.name}</option>`,
+            )
+            .join("")
+        );
+      }
+
+      // ── CLEAR ────────────────────────────────────────────────────
+      function clearAll() {
+        if (!S.pairs.length) return;
+        if (!confirm("Clear all journal entries?")) return;
+        S.pairs = [];
+        S.seqIdx = 0;
+        render();
+        toast("Cleared", "info");
+      }
+
+      // ── COA ──────────────────────────────────────────────────────
+      function openCOA() {
+        document.getElementById("coaOvl").classList.add("open");
+      }
+      function closeCOA() {
+        document.getElementById("coaOvl").classList.remove("open");
+      }
+
+      function onCOAFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const rd = new FileReader();
+        rd.onload = (ev) => {
+          const lines = ev.target.result.split("\n").filter((l) => l.trim());
+          const parsed = lines
+            .map((l) => {
+              const p = l.split(",");
+              return {
+                id: p[0]?.trim(),
+                name: p[1]?.trim(),
+                type: p[2]?.trim(),
+              };
+            })
+            .filter((r) => r.id && r.name);
+
+          const list = document.getElementById("coaList");
+          list.style.display = "block";
+          list.innerHTML =
+            parsed
+              .slice(0, 7)
+              .map(
+                (r) =>
+                  `<div class="coa-row"><span class="coa-id">${r.id}</span><span class="coa-name">${r.name}</span></div>`,
+              )
+              .join("") +
+            (parsed.length > 7
+              ? `<div class="coa-row" style="color:var(--text-muted)">…and ${parsed.length - 7} more</div>`
+              : "");
+
+          const btn = document.getElementById("btnLoadCOA");
+          btn.disabled = false;
+          btn._p = parsed;
+        };
+        rd.readAsText(file);
+      }
+
+      // drag-drop
+      const coaDrop = document.getElementById("coaDrop");
+      coaDrop.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        coaDrop.style.borderColor = "var(--blue)";
+      });
+      coaDrop.addEventListener("dragleave", () => {
+        coaDrop.style.borderColor = "";
+      });
+      coaDrop.addEventListener("drop", (e) => {
+        e.preventDefault();
+        coaDrop.style.borderColor = "";
+        const f = e.dataTransfer.files[0];
+        if (f) onCOAFile({ target: { files: [f] } });
+      });
+
+      function confirmCOA() {
+        const parsed = document.getElementById("btnLoadCOA")._p;
+        if (!parsed) return;
+        S.coa = parsed;
+        S.coaLoaded = true;
+        document.getElementById("coaDot").classList.add("loaded");
+        document.getElementById("coaLabel").textContent =
+          `${parsed.length} accounts loaded`;
+        document.getElementById("coaPill").classList.add("loaded");
+        closeCOA();
+        render();
+        toast(`${parsed.length} accounts loaded`, "ok");
+        setStatus(`COA: ${parsed.length} accounts`);
+      }
+
+      // ── COLUMN MAPPER ────────────────────────────────────────────
+      function openColMapper() {
+        renderMap();
+        document.getElementById("colOvl").classList.add("open");
+      }
+      function closeColMapper() {
+        document.getElementById("colOvl").classList.remove("open");
+      }
+
+      function renderMap() {
+        document.getElementById("mapList").innerHTML = Object.entries(S.colMap)
+          .map(
+            ([vis, exp]) => `
+    <div class="map-row">
+      <div class="map-vis">${vis}</div>
+      <div class="map-arrow">→</div>
+      <div class="map-exp">
+        <select class="fselect" style="padding:7px 10px;font-size:12px"
+          onchange="S.colMap['${vis}']=this.value">
+          ${EXPORT_COLS.map((c) => `<option${c === exp ? " selected" : ""}>${c}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      function addCol() {
+        const name = document.getElementById("newColName").value.trim();
+        const target = document.getElementById("newColTarget").value;
+        if (!name || !target) {
+          toast("Fill both fields", "err");
+          return;
+        }
+        S.colMap[name] = target;
+        document.getElementById("newColName").value = "";
+        document.getElementById("newColTarget").value = "";
+        renderMap();
+        toast(`"${name}" column added`, "ok");
+      }
+
+      // ── EXPORT ───────────────────────────────────────────────────
+      async function exportCSV() {
+        if (!S.pairs.length) {
+          toast("No entries to export", "err");
+          return;
+        }
+        const rows = [];
+        S.pairs.forEach((p) => {
+          const base = {
+            Transaction_Date: p.date || "",
+            Reference_Number: p.ref || "",
+            Secondary_ID: "",
+            Journal_Type_ID: "2",
+            Description_Memo: p.desc || p.vendor || "",
+            Amount: p.amount ? p.amount.toFixed(2) : "0.00",
+            Allocation_Code: "",
+            Is_Reconciled: "FALSE",
+            Accounting_Period: "15",
+            Distribution_Line: "1",
+            Tax_Status_Flag: "0",
+            Internal_System_Flag: "0",
+          };
+          rows.push({ ...base, Account_ID: p.drAcct || "" });
+          rows.push({
+            ...base,
+            Account_ID: p.crAcct || "",
+            Amount: p.amount ? (-p.amount).toFixed(2) : "0.00",
+          });
+        });
+        const header = EXPORT_COLS.join(",");
+        const body = rows
+          .map((r) =>
+            EXPORT_COLS.map((c) => {
+              const v = r[c] || "";
+              return v.includes(",") ? `"${v}"` : v;
+            }).join(","),
+          )
+          .join("\n");
+        const csv = header + "\n" + body;
+
+        const result = await api.exportCSV(csv);
+        if (result?.path) {
+          toast(`Saved → ${result.path}`, "ok");
+          setStatus(`Exported: ${result.path}`);
+        } else {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+          a.download = `journal_${Date.now()}.csv`;
+          a.click();
+          toast("CSV downloaded", "ok");
+        }
+      }
+
+      // ── DIVIDER ──────────────────────────────────────────────────
+      const div = document.getElementById("divider");
+      const vp = document.getElementById("viewerPanel");
+      let dDrag = false;
+      div.addEventListener("mousedown", (e) => {
+        dDrag = true;
+        div.classList.add("drag");
+        e.preventDefault();
+      });
+      document.addEventListener("mousemove", (e) => {
+        if (!dDrag) return;
+        const r = document.querySelector("main").getBoundingClientRect();
+        const pct = ((e.clientX - r.left) / r.width) * 100;
+        vp.style.width = Math.max(25, Math.min(65, pct)) + "%";
+        syncCanvas();
+      });
+      document.addEventListener("mouseup", () => {
+        if (!dDrag) return;
+        dDrag = false;
+        div.classList.remove("drag");
+      });
+
+      // ── INIT ─────────────────────────────────────────────────────
+      window.addEventListener("pywebviewready", () => {
+        toast("Ready", "ok");
+        setStatus("Connected");
+      });
+
+      if (!window.pywebview) {
+        setTimeout(() => {
+          setStatus("Browser mode — pywebview not connected");
+          const p = makePair();
+          p.vendor = "ABC Auto Parts";
+          p.date = "06/15/26";
+          p.ref = "INV-001";
+          p.desc = "BRAKE PAD";
+          p.amountRaw = "2,173.91";
+          p.amount = 2173.91;
+          S.pairs.push(p);
+          render();
+        }, 200);
+      }
+
+      render();
+    </script>
+  </body>
+</html>
